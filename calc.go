@@ -15,25 +15,56 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/clpo13/bls-go"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Please specify a JSON file to read")
-		os.Exit(1)
-  }
+	startPtr := flag.String("start", "", "first `year` to get data for")
+	endPtr := flag.String("end", "", "last `year` to get data for")
+	seriesPtr := flag.String("series", "", "series to get data for")
 
-	f, err := ioutil.ReadFile(os.Args[1])
-	if err != nil {
-		panic(err)
+	avgPtr := flag.Bool("avg", false, "request annual average of monthly values")
+	calcPtr := flag.Bool("calc", false, "request data calculations")
+	catPtr := flag.Bool("cat", false, "request series catalog data")
+
+	keyPtr := flag.String("key", "", "API key to use")
+
+	flag.Parse()
+
+	if *startPtr == "" {
+		fmt.Println("Need a start year")
+		os.Exit(1)
 	}
 
-	tr := blsgo.ParseData(f)
+	if *endPtr == "" {
+		fmt.Println("Need an end year")
+		os.Exit(1)
+	}
+
+	if *seriesPtr == "" {
+		fmt.Println("Need a series")
+		os.Exit(1)
+	}
+
+	fmt.Printf("Querying series %s for years %s through %s...\n", *seriesPtr, *startPtr, *endPtr)
+
+	// Create a JSON payload.
+	seriesArray := []string{*seriesPtr} // Convert seriesID to an array since that's what the API expects.
+	payload := blsgo.Payload{
+	  Start:   *startPtr,
+	  End:     *endPtr,
+	  Series:  seriesArray,
+		Catalog: *catPtr,
+		Calc:    *calcPtr,
+	  Avg:     *avgPtr,
+	  Key:     *keyPtr,
+	}
+
+	tr := blsgo.GetData(payload)
 
 	catalog := tr.Results.Series[0].Catalog
 	if catalog != nil {
