@@ -1,3 +1,4 @@
+// bls-calc-go - a command-line program to demo the bls-go library
 // Copyright 2018 Cody Logan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,54 +19,77 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/clpo13/bls-go"
 )
 
 func main() {
-	startPtr := flag.String("start", "", "first `year` to get data for")
-	endPtr := flag.String("end", "", "last `year` to get data for")
-	seriesPtr := flag.String("series", "", "series to get data for")
+	// Required flags
+	startPtr := flag.String("start", "", "first `year` to get data for (required)")
+	endPtr := flag.String("end", "", "last `year` to get data for (required)")
+	seriesPtr := flag.String("series", "", "series to get data for (required)")
 
+	// Optional flags
 	avgPtr := flag.Bool("avg", false, "request annual average of monthly values")
 	calcPtr := flag.Bool("calc", false, "request data calculations")
 	catPtr := flag.Bool("cat", false, "request series catalog data")
 
+	// The API call will still work with no API key, but the results are limited.
 	keyPtr := flag.String("key", "", "API key to use")
 
 	flag.Parse()
 
-	if *startPtr == "" {
-		fmt.Println("Need a start year")
+	// Start year, end year, and series ID are required, so print an error and
+	// quit if they aren't found.
+	if *startPtr == "" || *endPtr == "" || *seriesPtr == "" {
+		fmt.Println("Missing a required flag!")
+		fmt.Println("Try 'calc --help' for more information.")
 		os.Exit(1)
 	}
 
-	if *endPtr == "" {
-		fmt.Println("Need an end year")
-		os.Exit(1)
-	}
-
-	if *seriesPtr == "" {
-		fmt.Println("Need a series")
-		os.Exit(1)
-	}
-
-	fmt.Printf("Querying series %s for years %s through %s...\n", *seriesPtr, *startPtr, *endPtr)
+	fmt.Printf("Querying series %s for years %s through %s...\n\n", *seriesPtr, *startPtr, *endPtr)
 
 	// Create a JSON payload.
 	seriesArray := []string{*seriesPtr} // Convert seriesID to an array since that's what the API expects.
 	payload := blsgo.Payload{
-	  Start:   *startPtr,
-	  End:     *endPtr,
-	  Series:  seriesArray,
+		Start:   *startPtr,
+		End:     *endPtr,
+		Series:  seriesArray,
 		Catalog: *catPtr,
 		Calc:    *calcPtr,
-	  Avg:     *avgPtr,
-	  Key:     *keyPtr,
+		Avg:     *avgPtr,
+		Key:     *keyPtr,
 	}
 
+	// Send the payload to the API.
 	tr := blsgo.GetData(payload)
 
+	// Eventually, this error handling will be taken care of by the library
+	// itself, which will send an error object if the server doesn't send
+	// what we expect.
+	if tr.Status != "REQUEST_SUCCEEDED" {
+		fmt.Println("Server error:", tr.Status)
+		for _, v := range tr.Message {
+			fmt.Println(v)
+		}
+		os.Exit(1)
+	}
+
+	// Print out any messages.
+	if len(tr.Message) > 0 {
+		for _, v := range tr.Message {
+			fmt.Println(v)
+		}
+		// If the first message is about an invalid series, quit with an error.
+		if strings.HasPrefix(tr.Message[0], "Invalid Series") {
+			os.Exit(1)
+		}
+	}
+
+	// Catalog data is optional, so only print it out if we got it.
+	// TODO: not all fields are present in all series, so make them optional
+	// as well.
 	catalog := tr.Results.Series[0].Catalog
 	if catalog != nil {
 		fmt.Println("Series title:", catalog.Title)
@@ -79,12 +103,15 @@ func main() {
 		fmt.Println()
 	}
 
+	// TODO: print out more than just the first period.
 	data := tr.Results.Series[0].Data[0]
 	fmt.Println("Year:", data.Year)
 	fmt.Println("Period:", data.Num)
 	fmt.Println("Period name:", data.Name)
 	fmt.Println("Value:", data.Value)
 
+	// An empty array of footnotes is always returned, but don't print anything
+	// if we didn't get any actual footnotes.
 	fn := data.Footnotes
 	if fn[0].Code != nil {
 		fmt.Println("Footnotes:")
@@ -93,6 +120,8 @@ func main() {
 		}
 	}
 
+	// Calculations are optional, so only print them if we received them.
+	// TODO: some series send only net or pct change, not both.
 	calcs := data.Calculations
 	if calcs != nil {
 		net := calcs.NetChange

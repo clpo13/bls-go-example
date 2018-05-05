@@ -1,2 +1,4 @@
 calc
-calc.exe
+debug
+*.exe
+/.vscode/
