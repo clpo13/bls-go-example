@@ -1,4 +1,4 @@
-// bls-calc-go - a command-line program to demo the bls-go library
+// bls-go-example - a command-line program to demo the bls-go library
 // Copyright 2018 Cody Logan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,7 +44,7 @@ func main() {
 	// quit if they aren't found.
 	if *startPtr == "" || *endPtr == "" || *seriesPtr == "" {
 		fmt.Println("Missing a required flag!")
-		fmt.Println("Try 'calc --help' for more information.")
+		fmt.Println("Try 'bls-go-example --help' for more information.")
 		os.Exit(1)
 	}
 

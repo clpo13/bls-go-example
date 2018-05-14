@@ -1,4 +1,4 @@
-# bls-go-calc
+# bls-go-example
 
 This is a simple demo program that uses the [bls-go](https://github.com/clpo13/bls-go)
 library to query BLS.gov for labor statistics.
@@ -15,15 +15,15 @@ or catalog data, and you're subject to stricter daily query limits.
 ## Installation
 
 ```bash
-git clone https://github.com/clpo13/bls-go-calc.git
-cd bls-go-calc
+git clone https://github.com/clpo13/bls-go-example.git
+cd bls-go-example
 go install
 ```
 
 ## Usage
 
 ```txt
-Usage of bls-calc:
+Usage of bls-go-example:
   -start year
         first year to get data for (required)
   -end year
@@ -47,7 +47,7 @@ if the `-calc` flag was used.
 ## Contributing
 
 Issues and pull requests are always welcome. Please file any bug reports using
-the GitHub [issues page](https://github.com/clpo13/bls-go-calc/issues).
+the GitHub [issues page](https://github.com/clpo13/bls-go-example/issues).
 
 ## License
 
