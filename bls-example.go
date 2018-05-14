@@ -63,14 +63,14 @@ func main() {
 	}
 
 	// Send the payload to the API.
-	tr := blsgo.GetData(payload)
+	tr, err := blsgo.GetData(payload)
 
-	// Eventually, this error handling will be taken care of by the library
-	// itself, which will send an error object if the server doesn't send
-	// what we expect.
-	if tr.Status != "REQUEST_SUCCEEDED" {
-		fmt.Println("Server error:", tr.Status)
-		for _, v := range tr.Message {
+	// Handle errors sent by the server.
+	// Get the error as an instance via type assertion:
+	// <https://gobyexample.com/errors>
+	if aerr, ok := err.(*blsgo.DataError); ok {
+		fmt.Println("Server error:", aerr.Msg)
+		for _, v := range aerr.Details {
 			fmt.Println(v)
 		}
 		os.Exit(1)
